@@ -74,6 +74,7 @@ int minimax(std::vector<std::string> node, int depth, bool maximixingPlayer) {
 }
 
 int calculateNextMove(std::vector<std::string> &board) {
+    std::cout << "Calculating next move..." << std::endl;
     std::vector<int> available_slots;
     int idx = 0;
     for (auto& a : board) {
@@ -82,7 +83,6 @@ int calculateNextMove(std::vector<std::string> &board) {
         }
         idx++;
     }
-    std::cout << "slot: " << available_slots.size() << std::endl;
     int bestVal = INT_MIN, slotMove = 0;
     for (auto& slot : available_slots) {
         board[slot] = robot;
@@ -140,7 +140,9 @@ int main()
     std::cout << "computer: " << robot << " human: " << human << std::endl;
     while (true) {
         int turn;
-        restart_game = evaluateWinnerAndPrintBoard(orignalBoard);
+        if (!restart_game) {
+            restart_game = evaluateWinnerAndPrintBoard(orignalBoard);
+        }
         if (restart_game) {
             std::cout << "Restarting game..." << std::endl;
             for (auto& a : orignalBoard) {
@@ -159,7 +161,7 @@ int main()
         }
         else {
             orignalBoard[turn - 1] = human;
-            evaluateWinnerAndPrintBoard(orignalBoard);
+            restart_game = evaluateWinnerAndPrintBoard(orignalBoard);
             if (!restart_game) {
                 int slotMove = calculateNextMove(orignalBoard);
                 std::cout << "Computer move: " << slotMove + 1 << std::endl;
