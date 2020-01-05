@@ -30,15 +30,19 @@ bool winning(std::vector<std::string> board, std::string player) {
     }
 }
 
-int minimax(std::vector<std::string> node, int depth, bool maximixingPlayer) {
-    std::vector<int> available_slots;
+void calculateAvailableSlot(std::vector<std::string> &board, std::vector<int> &available_slots) {
     int idx = 0;
-    for (auto& a : node) {
-        if (a=="-") {
+    for (auto& a : board) {
+        if (a == "-") {
             available_slots.push_back(idx);
         }
         idx++;
     }
+}
+
+int minimax(std::vector<std::string> node, int depth, int alpha, int beta, bool maximixingPlayer) {
+    std::vector<int> available_slots;
+    calculateAvailableSlot(node, available_slots);
 
     // Check for terminating condition
     if (winning(node, human)) {
@@ -56,8 +60,12 @@ int minimax(std::vector<std::string> node, int depth, bool maximixingPlayer) {
         value = INT_MIN;
         for (auto& slot : available_slots) {
             node[slot] = robot;
-            int result = minimax(node, depth - 1, false);
+            int result = minimax(node, depth - 1, alpha, beta, false);
             value = std::max(result, value);
+            alpha = std::max(alpha, value);
+            if (alpha >= beta) {
+                break;
+            }
             node[slot] = "-";
         }
     }
@@ -65,8 +73,12 @@ int minimax(std::vector<std::string> node, int depth, bool maximixingPlayer) {
         value = INT_MAX;
         for (auto& slot : available_slots) {
             node[slot] = human;
-            int result = minimax(node, depth - 1, true);
+            int result = minimax(node, depth - 1, alpha, beta, true);
             value = std::min(result, value);
+            beta = std::min(beta, value);
+            if (alpha >= beta) {
+                break;
+            }
             node[slot] = "-";
         }
     }
@@ -75,18 +87,15 @@ int minimax(std::vector<std::string> node, int depth, bool maximixingPlayer) {
 
 int calculateNextMove(std::vector<std::string> &board) {
     std::cout << "Calculating next move..." << std::endl;
+    
     std::vector<int> available_slots;
-    int idx = 0;
-    for (auto& a : board) {
-        if (a=="-") {
-            available_slots.push_back(idx);
-        }
-        idx++;
-    }
+    calculateAvailableSlot(board, available_slots);
+
     int bestVal = INT_MIN, slotMove = 0;
+    int alpha = INT_MIN, beta = INT_MAX;
     for (auto& slot : available_slots) {
         board[slot] = robot;
-        int result = minimax(board, available_slots.size(), false);
+        int result = minimax(board, (int)available_slots.size(), alpha, beta, false);
         if (result > bestVal) {
             bestVal = result;
             slotMove = slot;
@@ -108,14 +117,10 @@ bool evaluateWinnerAndPrintBoard(std::vector<std::string> &board) {
         }
         c++;
     }
+
     std::vector<int> available_slots;
-    int idx = 0;
-    for (auto& a : board) {
-        if (a == "-") {
-            available_slots.push_back(idx);
-        }
-        idx++;
-    }
+    calculateAvailableSlot(board, available_slots);
+
     bool restart = false;
     if (winning(board, human)) {
         std::cout << "Human win ... " << std::endl;
@@ -151,12 +156,21 @@ int main()
             evaluateWinnerAndPrintBoard(orignalBoard);
             restart_game = false;
         }
-        std::cout << "Enter your turn (-1 to exit): ";
-        std::cin >> turn;
+        std::vector<int> available_slots;
+        calculateAvailableSlot(orignalBoard, available_slots);
+        // No one has won, it is last slot and human turn so fill slot automatically
+        if (available_slots.size() == 1) {
+            turn = available_slots[0] + 1;
+            std::cout << "Enter your turn (-1 to exit): " << turn << std::endl;
+        }
+        else {
+            std::cout << "Enter your turn (-1 to exit): ";
+            std::cin >> turn;
+        }
         if (turn == -1) {
             exit(0);
         }
-        else if (turn < 1 || turn > 10) {
+        else if (turn < 1 || turn > 10 || orignalBoard[turn-1] != "-") {
             std::cout << "Wrong input..." << std::endl;
         }
         else {
